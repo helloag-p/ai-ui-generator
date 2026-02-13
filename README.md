@@ -1,329 +1,180 @@
-AI UI Generator – Deterministic Multi-Agent System
+# AI UI Generator
 
-Ryze AI Full-Stack Assignment – [Your Name]
+Deterministic multi-agent system that converts natural-language UI intent into reproducible React layouts, with live preview, versioning, and plain-English explanations.
 
-🧠 Overview
+## What it is
 
-This project implements a deterministic AI-powered UI generation system inspired by Claude Code-style orchestration.
+- Converts user prompts into a structured JSON UI plan.
+- Composes UI from a fixed component library (whitelist enforced) for deterministic, auditable output.
+- Stores versions, supports incremental edits, and explains decisions in plain English.
 
-The system converts natural language UI intent into:
+## Key features
 
-Structured UI layout plans
+- Planner → Generator → Validator → Explainer multi-agent pipeline
+- Deterministic React component composition (no AI-generated CSS)
+- Live preview with whitelist enforcement
+- In-memory versioning and rollback
+- Basic prompt-injection protections and schema checks
 
-Deterministic React component compositions
+## Architecture overview
 
-Live-rendered previews
+High-level flow:
 
-Versioned UI states
+User intent → Planner → Generator → Validator → Explainer → Version Store → Renderer
 
-Plain-English explanations of decisions
+Core pieces:
 
-The architecture prioritizes correctness, reproducibility, and debuggability over visual polish.
+- Planner: produces a structured JSON plan describing top-level components and their props.
+- Generator: deterministically maps plan entries to the allowed component set and props.
+- Validator: enforces plan schema, checks for unknown components and basic prompt-injection patterns.
+- Explainer: produces plain-English rationale and a human-readable diff vs. previous plan.
+- Version Store: in-memory timeline of plans for rollback and audit.
+- Renderer: whitelist-enforced React renderer that blocks disallowed component types.
 
-🎯 Core Design Principles
+## Agent design & prompts
 
-Deterministic Component System
+Each agent uses a concise, constrained prompt template so outputs are auditable and machine-validated.
 
-Explicit Multi-Agent Orchestration
+- Planner
+	- Purpose: interpret user intent, select layout structure and components, and preserve/increment from previous plan.
+	- Output: JSON array of objects {"type": string, "props": object, "id"?: string}.
+	- Prompt pattern:
+		- System: "You are a Planner. Return only a JSON array describing the UI plan."
+		- User: "Intent: <user text>. Previous plan: <JSON>. Return an updated plan."
 
-Iterative Edit Awareness
+- Generator
+	- Purpose: deterministically convert the validated plan to a component tree representation.
+	- Constraints: use only whitelist components; do not emit CSS, classes, or new component code.
+	- Prompt pattern:
+		- System: "You are the Generator. Given a validated plan, output a JSON representation of the component tree using only allowed types."
+		- User: "Plan: <JSON>."
 
-Safety & Validation Controls
+- Validator
+	- Purpose: confirm plan is valid JSON, follows schema, contains only allowed types, and does not contain suspicious instructions.
+	- Behavior: return pass/fail + normalized plan or an error reason.
 
-Explainability
+- Explainer
+	- Purpose: generate short plain-English bullets describing why components were chosen and what changed.
+	- Output: human-readable text only (no JSON).
 
-🏗️ Architecture Overview
-User Intent
-    ↓
-Planner Agent
-    ↓
-Generator Agent
-    ↓
-Validator
-    ↓
-Explainer Agent
-    ↓
-Version Store
-    ↓
-React Renderer (Whitelist Enforced)
+Example plan:
 
-🧠 Multi-Agent Design
+```json
+[ { "type": "Navbar", "props": { "title": "Dashboard" } },
+	{ "type": "Card", "props": { "title": "Revenue", "value": "$12k" } } ]
+```
 
-The system intentionally separates responsibilities into explicit agent steps.
+## Component system design
 
-1️⃣ Planner
+- Whitelist components: `Button`, `Card`, `Input`, `Table`, `Modal`, `Sidebar`, `Navbar`, `Chart`.
+- Rules:
+	- Agents must not generate CSS or arbitrary classnames.
+	- No new component definitions or external UI libraries.
+	- Renderer will block any component not on the whitelist before rendering.
 
-Purpose:
-Interprets user intent and selects layout structure.
+Renderer enforcement (example):
 
-Responsibilities:
+```js
+const COMPONENT_WHITELIST = ["Navbar","Card","Button","Input","Table","Modal","Sidebar","Chart"]
+function renderNode(node){
+	if (!COMPONENT_WHITELIST.includes(node.type)) throw new Error('Unknown component blocked')
+	// map to actual component and render with props
+}
+```
 
-Understand natural language request
+## Known limitations
 
-Decide which components to use
+- In-memory version store: versions are lost on restart.
+- Validation is primarily schema-level; structural-diff enforcement is not implemented.
+- Prompt-injection mitigations are pattern-based and not adversarially hardened.
+- No streaming LLM responses; agents run as single synchronous requests.
+- No production-ready persistence, rate-limiting, or retries.
 
-Preserve previous layout for incremental edits
+## What I'd improve with more time
 
-Output structured JSON plan
+- Add persistent version storage (database or object storage) and data migrations.
+- Implement strict JSON Schema validation + structural diff enforcement for safe incremental edits.
+- Harden prompt sanitization and validator logic to resist adversarial inputs.
+- Add streaming responses and optimistic partial rendering for faster UX.
+- Add end-to-end tests for agent output, renderer enforcement, and version rollback.
 
-Example output:
+## Tech stack
 
-[
-  { "type": "Navbar", "props": {} },
-  { "type": "Card", "props": { "title": "Card 1" } }
-]
+- Frontend: React + Vite + Tailwind
+- Backend: Node.js + Express
+- AI: LLM API (Gemini client in `server/agent`)
 
-2️⃣ Generator
+## Quick start
 
-Purpose:
-Converts structured plan into deterministic UI layout.
+1. Install dependencies for server and client:
 
-Constraints:
-
-Must use fixed component library
-
-Cannot create new components
-
-Cannot generate CSS
-
-Only sets props and composes components
-
-3️⃣ Explainer
-
-Purpose:
-Explains why the UI was structured in a certain way.
-
-Produces plain-English reasoning referencing:
-
-Layout decisions
-
-Component selections
-
-Incremental changes
-
-🔒 Deterministic Component System
-
-All UIs are built using a fixed component library:
-
-Button
-
-Card
-
-Input
-
-Table
-
-Modal
-
-Sidebar
-
-Navbar
-
-Chart (mocked)
-
-Strict Rules
-
-No inline styles
-
-No AI-generated CSS
-
-No arbitrary Tailwind classes from AI
-
-No external UI libraries
-
-No dynamic component creation
-
-Enforcement
-
-Renderer implements explicit whitelist enforcement:
-
-const COMPONENT_WHITELIST = [...]
-
-
-Any unknown component type is blocked before rendering.
-
-This guarantees visual consistency and reproducibility.
-
-🔁 Iterative Editing
-
-The system supports incremental modifications.
-
-Example:
-
-"Make this more minimal and add a settings modal."
-
-The planner receives the previous layout and modifies it rather than regenerating from scratch.
-
-Version history is preserved and rollback is supported.
-
-🛡️ Safety & Validation
-
-The system includes lightweight but real protections:
-
-✅ Component Whitelist Enforcement
-
-Prevents unknown components from rendering.
-
-✅ Layout Structure Validation
-
-Ensures AI output matches expected schema before rendering.
-
-✅ Prompt Injection Guard
-
-Basic filtering of suspicious patterns like:
-
-"ignore previous instructions"
-
-"system prompt"
-
-"bypass rules"
-
-✅ Error Handling
-
-Graceful failure for:
-
-Invalid AI output
-
-Schema mismatch
-
-Suspicious user input
-
-🖥️ Application UI
-
-The interface includes:
-
-Left Panel: User chat / intent input
-
-Center Panel: Generated JSON (editable)
-
-Right Panel: Live preview
-
-Explanation section
-
-Version history with rollback
-
-Generate / Modify / Regenerate actions
-
-🧰 Tech Stack
-
-Frontend:
-
-React (Vite)
-
-TailwindCSS
-
-Backend:
-
-Node.js
-
-Express
-
-AI:
-
-LLM API (Gemini)
-
-Storage:
-
-In-memory version store
-
-📦 Setup Instructions
-1️⃣ Clone Repository
-git clone <repo-url>
-cd project
-
-2️⃣ Backend Setup
+```bash
 cd server
 npm install
 
-
-Create .env:
-
-GEMINI_API_KEY=your_key_here
-
-
-Run:
-
-node index.js
-
-3️⃣ Frontend Setup
-cd client
+cd ../client
 npm install
+```
+
+2. Start the backend (from the `server` folder):
+
+```bash
+node index.js
+```
+
+3. Start the frontend (from the `client` folder):
+
+```bash
 npm run dev
+```
 
+4. Open the frontend at http://localhost:5173
 
-Open:
+Notes:
+- Set `GEMINI_API_KEY` in `server/.env` if you want to use the Gemini client.
+- Consider adding a `start` script to `server/package.json` for convenience.
 
-http://localhost:5173
+## Development notes
 
-🔄 Example Workflow
+- Components used by the generator are in `client/src/components/ui/`.
+- The backend agent code is under `server/agent/`.
+- Version storage is implemented in `server/versionStore.js` (in-memory).
 
-User types:
-"Create a dashboard with navbar and 3 cards"
+## Folder structure
 
-Planner selects:
+Top-level layout (short):
 
-Navbar
+```
+AI_UI_generator/
+├─ client/                 # Frontend (Vite + React + Tailwind)
+│  ├─ public/
+│  ├─ src/
+│  │  ├─ assets/
+│  │  ├─ components/
+│  │  │  └─ ui/            # Whitelisted UI components used by generator
+│  │  ├─ App.jsx
+│  │  └─ main.jsx
+│  └─ package.json
+├─ server/                 # Backend (Express + agents)
+│  ├─ agent/               # Planner, Generator, Validator, Explainer
+│  ├─ routes/
+│  ├─ versionStore.js
+│  ├─ index.js
+│  └─ package.json
+└─ README.md
+```
 
-Card x3
+Notes:
+- See `client/src/components/ui/` for concrete component implementations.
+- See `server/agent/` for agent implementations and prompt usage.
 
-Generator creates deterministic layout
+## License
 
-Explainer describes decision
+Add your preferred license here.
 
-UI renders live
+---
 
-User modifies:
-"Add a settings modal"
+If you'd like, I can also:
 
-Planner updates previous plan
-
-New version stored
-
-User can rollback
-
-⚖ Engineering Tradeoffs
-Why Multi-Agent Instead of Single Call?
-
-Explicit reasoning stages
-
-Easier debugging
-
-Deterministic enforcement
-
-Clear separation of concerns
-
-Why In-Memory Storage?
-
-Simplicity for assignment
-
-Focus on orchestration rather than infrastructure
-
-🚧 Known Limitations
-
-No structural diff enforcement
-
-Basic prompt injection filtering only
-
-No streaming AI responses
-
-No persistence beyond server restart
-
-No schema-level deep validation
-
-🔮 What I Would Improve With More Time
-
-Formal JSON schema validation
-
-Structural diff-based edit enforcement
-
-Streaming response support
-
-Replayable generation logs
-
-Component-level schema enforcement
-
-Structured AST validation
-
-Rate-limit aware retry system
-
-Persistent version storage
+- Add a `start` script to `server/package.json` and update docs.
+- Expand `client/README.md` with contributor setup and testing notes.
