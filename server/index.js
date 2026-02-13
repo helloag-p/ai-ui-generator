@@ -6,7 +6,12 @@ const agentRouter = require("./routes/agent");
 
 const app = express();
 
-app.use(cors());
+const cors = require("cors");
+
+app.use(cors({
+  origin: "*",
+}));
+
 app.use(express.json());
 
 app.use("/api/agent", agentRouter);

@@ -15,7 +15,7 @@ function App() {
     if (loading) return;
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:5000/api/agent", {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/agent`, {
         message,
         previousPlan: reset ? [] : layout
       });
