@@ -9,6 +9,8 @@ function App() {
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState(null);
+  const [jsonText, setJsonText] = useState("");
+
 
 
   const generateUI = async (reset = false) => {
@@ -21,6 +23,7 @@ function App() {
       });
 
       setLayout(res.data.layout);
+      setJsonText(JSON.stringify(res.data.layout, null, 2));
       setExplanation(res.data.explanation);
       setVersions(prev => [...prev, res.data]);
 
@@ -35,6 +38,7 @@ function App() {
   const rollback = (index) => {
     const version = versions[index];
     setLayout(version.layout);
+    setJsonText(JSON.stringify(version.layout, null, 2));
     setExplanation(version.explanation);
     setSelectedVersion(index);
   };
@@ -108,11 +112,12 @@ function App() {
               <button
                 key={i}
                 onClick={() => rollback(i)}
-                className={`px-3 py-1 rounded-lg text-xs ${
+                className={`px-3 py-1.5 rounded-lg text-xs transition ${
   selectedVersion === i
-    ? "bg-blue-600"
+    ? "bg-blue-600 text-white shadow-md"
     : "bg-white/5 hover:bg-white/15"
 }`}
+
               >
                 V{i}
               </button>
@@ -152,17 +157,21 @@ function App() {
         </div>
 
         <textarea
-          className="flex-1 bg-gray-800/70 border border-white/10 rounded-xl p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition shadow-inner"
-          value={JSON.stringify(layout, null, 2)}
-          onChange={(e) => {
-            try {
-              const parsed = JSON.parse(e.target.value);
-              setLayout(parsed);
-            } catch {
-              // Ignore invalid JSON while typing
-            }
-          }}
-        />
+  className="flex-1 bg-gray-800/70 border border-white/10 rounded-xl p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition shadow-inner resize-none"
+  value={jsonText}
+  onChange={(e) => {
+    const value = e.target.value;
+    setJsonText(value);
+
+    try {
+      const parsed = JSON.parse(value);
+      setLayout(parsed);
+    } catch {
+      // allow typing invalid JSON temporarily
+    }
+  }}
+/>
+
 
       </div>
 
@@ -173,16 +182,17 @@ function App() {
           Live Preview
         </h2>
 
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900 rounded-xl p-8 min-h-[420px] border border-white/10 shadow-inner">
+      <div className="bg-white rounded-2xl p-10 min-h-[420px] border border-gray-200 shadow-lg transition-all duration-300">
+
 
           {layout.length === 0 ? (
-            <div className="text-white/30 text-sm text-center mt-20">
-              Generated UI will appear here...
-            </div>
-          ) : (
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <Renderer layout={layout} />
+           <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm">
+  <div className="mb-2 text-4xl">🧠</div>
+  Generated UI will appear here...
 </div>
+
+          ) : (
+          <Renderer layout={layout} />
 
           )}
 

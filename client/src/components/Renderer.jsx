@@ -7,6 +7,17 @@ import Table from "./ui/Table";
 import Sidebar from "./ui/Sidebar";
 import Chart from "./ui/Chart";
 
+const COMPONENT_WHITELIST = [
+  "Button",
+  "Card",
+  "Navbar",
+  "Modal",
+  "Input",
+  "Table",
+  "Sidebar",
+  "Chart"
+];
+
 const componentMap = {
   Button,
   Card,
@@ -19,40 +30,34 @@ const componentMap = {
 };
 
 export default function Renderer({ layout }) {
-  if (!Array.isArray(layout)) return null;
+  if (!Array.isArray(layout)) {
+    console.warn("Invalid layout format");
+    return null;
+  }
 
-  const navItems = layout.filter(item => item.type === "Navbar");
-  const cardItems = layout.filter(item => item.type === "Card");
-  const otherItems = layout.filter(
-    item => item.type !== "Navbar" && item.type !== "Card"
-  );
+ return (
+  <div className="flex flex-col gap-6 w-full animate-fadeIn">
+    {layout.map((item, index) => {
+      if (!COMPONENT_WHITELIST.includes(item.type)) {
+        console.warn("Blocked unknown component:", item.type);
+        return null;
+      }
 
-  return (
-    <div className="space-y-8">
+      const Component = componentMap[item.type];
 
-      {/* Navbar Section */}
-      {navItems.map((item, i) => {
-        const Component = componentMap[item.type];
-        return <Component key={`nav-${i}`} {...item.props} />;
-      })}
+      if (!Component) {
+        console.warn("Component not found in map:", item.type);
+        return null;
+      }
 
-      {/* Cards in Grid */}
-      {cardItems.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {cardItems.map((item, i) => {
-            const Component = componentMap[item.type];
-            return <Component key={`card-${i}`} {...item.props} />;
-          })}
+      return (
+        <div key={index} className="w-full">
+          <Component {...item.props} />
         </div>
-      )}
+      );
+    })}
+  </div>
+);
 
-      {/* Other Components */}
-      {otherItems.map((item, i) => {
-        const Component = componentMap[item.type];
-        if (!Component) return null;
-        return <Component key={`other-${i}`} {...item.props} />;
-      })}
-
-    </div>
-  );
 }
+
