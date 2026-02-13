@@ -1,17 +1,15 @@
 export default function Navbar() {
   return (
-    <nav className="w-full bg-gray-900 text-white shadow-md">
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-        <h1 className="text-xl font-semibold tracking-wide">
-          App Navbar
-        </h1>
+    <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl px-6 py-4 shadow-lg flex justify-between items-center">
+      <h1 className="text-xl font-semibold tracking-wide">
+        App Navbar
+      </h1>
 
-        <div className="flex gap-6 text-sm">
-          <a href="#" className="hover:text-blue-400 transition">Home</a>
-          <a href="#" className="hover:text-blue-400 transition">About</a>
-          <a href="#" className="hover:text-blue-400 transition">Contact</a>
-        </div>
+      <div className="space-x-6 text-sm opacity-90">
+        <span className="hover:opacity-100 cursor-pointer">Home</span>
+        <span className="hover:opacity-100 cursor-pointer">About</span>
+        <span className="hover:opacity-100 cursor-pointer">Contact</span>
       </div>
-    </nav>
+    </div>
   );
 }

@@ -7,17 +7,6 @@ import Table from "./ui/Table";
 import Sidebar from "./ui/Sidebar";
 import Chart from "./ui/Chart";
 
-const COMPONENT_WHITELIST = [
-  "Button",
-  "Card",
-  "Navbar",
-  "Modal",
-  "Input",
-  "Table",
-  "Sidebar",
-  "Chart"
-];
-
 const componentMap = {
   Button,
   Card,
@@ -30,28 +19,40 @@ const componentMap = {
 };
 
 export default function Renderer({ layout }) {
-  if (!Array.isArray(layout)) {
-    console.warn("Invalid layout format");
-    return null;
-  }
+  if (!Array.isArray(layout)) return null;
+
+  const navItems = layout.filter(item => item.type === "Navbar");
+  const cardItems = layout.filter(item => item.type === "Card");
+  const otherItems = layout.filter(
+    item => item.type !== "Navbar" && item.type !== "Card"
+  );
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
-      {layout.map((item, index) => {
-        if (!COMPONENT_WHITELIST.includes(item.type)) {
-          console.warn("Blocked unknown component:", item.type);
-          return null;
-        }
+    <div className="space-y-8">
 
+      {/* Navbar Section */}
+      {navItems.map((item, i) => {
         const Component = componentMap[item.type];
-
-        if (!Component) {
-          console.warn("Component not found in map:", item.type);
-          return null;
-        }
-
-        return <Component key={index} {...item.props} />;
+        return <Component key={`nav-${i}`} {...item.props} />;
       })}
+
+      {/* Cards in Grid */}
+      {cardItems.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {cardItems.map((item, i) => {
+            const Component = componentMap[item.type];
+            return <Component key={`card-${i}`} {...item.props} />;
+          })}
+        </div>
+      )}
+
+      {/* Other Components */}
+      {otherItems.map((item, i) => {
+        const Component = componentMap[item.type];
+        if (!Component) return null;
+        return <Component key={`other-${i}`} {...item.props} />;
+      })}
+
     </div>
   );
 }
