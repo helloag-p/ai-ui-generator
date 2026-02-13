@@ -6,7 +6,7 @@ const agentRouter = require("./routes/agent");
 
 const app = express();
 app.use(cors({
-  origin: "*",
+  origin: true,
 }));
 
 app.use(express.json());
